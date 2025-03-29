@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draw lots雙功能抽簽頁面</title>
+    <style>
+        /* 整體容器樣式 */
+        .container {
+            display: flex;
+            justify-content: space-between;
+            height: 100vh;
+        }
+
+        .left-panel, .right-panel {
+            width: 48%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .left-panel {
+            background-color: #f0f0f0; /* 左側背景色 */
+        }
+
+        .right-panel {
+            background-color: #e0e0e0; /* 右側背景色 */
+        }
+
+        /* 左側姓名顯示樣式 */
+        #numberText {
+            font-size: 100px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* 已抽姓名顯示樣式 */
+        #drawnNames {
+            font-size: 24px;
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+            word-wrap: break-word; /* 防止文字溢出 */
+        }
+
+        /* 右側圖片抽簽樣式 */
+        #gallery {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 70vh;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        #gallery img {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            margin: 10px auto;
+            transition: opacity 1s ease;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .image-name {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .counter {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左側：數字抽簽（僅顯示姓名） -->
+        <div class="left-panel">
+            <button id="numberButton">Start Name Lottery</button>
+            <div id="numberText"></div>
+            <div id="drawnNames"></div> <!-- 已抽姓名顯示區域 -->
+        </div>
+
+        <!-- 右側：圖片抽簽（保留原始結構） -->
+        <div class="right-panel">
+            <div class="counter">
+                Question No.第 <span id="clickCount">0</span>題
+            </div>
+            <div id="gallery">
+                <!-- 圖片將在這裡展示 -->
+            </div>
+            <div class="button-container">
+                <button id="toggleButton">Start 开始</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模擬 name.txt 內容，直接嵌入到 JavaScript 中
+
+const nameText = `
+#Put name list in following line, keep only one name in each line.把需要抽籤的名單放在第二行，每一行存放一個名單：
+Alex
+Alice
+Andrew
+Anna
+Ben
+Charlotte
+Chris
+Daniel
+David
+Emily
+Emma
+Ethan
+Grace
+Hannah
+Henry
+Isabella
+Jack
+Jacob
+James
+Jessica
+John
+Julia
+Liam
+Lily
+Matthew
+Mia
+Noah
+Olivia
+Sarah
+William`;
+
+
+        // 解析 name.txt 內容並生成 numberToName 對象
+        const numberToName = {};
+        const lines = nameText.trim().split('\n').map(line => line.trim());
+        const nameCount = lines.length - 1; // 總行數減去第一行描述行
+        for (let i = 1; i <= nameCount; i++) {
+            if (lines[i]) {
+                numberToName[i] = lines[i];
+            }
+        }
+
+        // 左側：姓名抽簽功能
+        let numberRunning = false; // 控制跑馬燈狀態
+        let numberInterval; // 存儲跑馬燈定時器
+        let currentNumberIndex = 0; // 當前索引
+        let numbers = Array.from({ length: nameCount }, (_, i) => i + 1); // 動態生成數組
+        let remainingNumbers = [...numbers]; // 剩餘數字
+        let drawnNames = []; // 存儲已抽過的姓名
+
+        // 打亂數組函數
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // 啟動姓名跑馬燈
+        function startNumberLottery() {
+            if (remainingNumbers.length === 0) {
+                alert("所有姓名已抽取完畢！");
+                return;
+            }
+            shuffleArray(remainingNumbers);
+            currentNumberIndex = 0;
+            numberRunning = true;
+
+            numberInterval = setInterval(() => {
+                if (!numberRunning || remainingNumbers.length === 0) {
+                    clearInterval(numberInterval);
+                    return;
+                }
+                document.getElementById('numberText').textContent = numberToName[remainingNumbers[currentNumberIndex]];
+                currentNumberIndex = (currentNumberIndex + 1) % remainingNumbers.length;
+            }, 50);
+
+            document.getElementById('numberButton').textContent = 'OK 抽籤';
+        }
+
+        // 暫停姓名跑馬燈並選定姓名
+        function pauseNumberLottery() {
+            if (remainingNumbers.length === 0) return;
+            numberRunning = false;
+            clearInterval(numberInterval);
+
+            const selectedNumber = remainingNumbers[currentNumberIndex];
+            const selectedName = numberToName[selectedNumber] || '未知姓名';
+            remainingNumbers.splice(currentNumberIndex, 1); // 移除選中的數字
+            drawnNames.push(selectedName); // 添加到已抽姓名列表
+            document.getElementById('numberText').textContent = selectedName;
+            document.getElementById('drawnNames').textContent = "Name selected已抽籤名單: " + drawnNames.join(', '); // 添加前綴
+
+            if (remainingNames.length === 0) {
+                alert("所有姓名已抽取完畢！Finished");
+            }
+
+            document.getElementById('numberButton').textContent = 'Start Name Lottery';
+        }
+
+        // 按鈕點擊事件
+        document.getElementById('numberButton').addEventListener('click', () => {
+            if (numberRunning) {
+                pauseNumberLottery();
+            } else {
+                startNumberLottery();
+            }
+        });
+
+        // 右側：圖片抽簽功能（保留原始邏輯）
+        const totalImages = 9;
+        const imagePaths = [];
+        for (let i = 1; i <= totalImages; i++) {
+            imagePaths.push(`images/photo${i}.jpg`); // 生成圖片路徑
+        }
+
+        let remainingImages = [...imagePaths]; // 剩餘圖片
+        let displayedImages = []; // 已顯示圖片
+        let isRunning = false; // 控制跑馬燈狀態
+        let currentIndex = 0; // 當前圖片索引
+        let interval; // 存儲定時器
+        let drawCount = 0; // 記錄抽簽次數
+        let clickCount = 0; // 記錄點擊次數
+
+        // 顯示圖片
+        function displayImage(imagePath) {
+            const imgElement = document.createElement('img');
+            imgElement.src = imagePath;
+            const fileName = imagePath.split('/').pop();
+            const nameElement = document.createElement('div');
+            nameElement.classList.add('image-name');
+            nameElement.textContent = fileName;
+
+            document.getElementById('gallery').innerHTML = '';
+            document.getElementById('gallery').appendChild(imgElement);
+            // 是否顯示文件名
+            // document.getElementById('gallery').appendChild(nameElement);
+        }
+
+        // 啟動圖片抽簽
+        function startLottery() {
+            if (remainingImages.length === 0) {
+                alert("所有圖片已顯示完畢！");
+                return;
+            }
+            shuffleArray(remainingImages);
+            currentIndex = 0;
+            isRunning = true;
+
+            interval = setInterval(() => {
+                if (!isRunning || remainingImages.length === 0) {
+                    clearInterval(interval);
+                    return;
+                }
+                displayImage(remainingImages[currentIndex]);
+                currentIndex = (currentIndex + 1) % remainingImages.length;
+            }, 50);
+
+            document.getElementById('toggleButton').textContent = 'OK 抽籤';
+        }
+
+        // 暫停圖片抽簽
+        function pauseLottery() {
+            if (remainingImages.length === 0) return;
+            isRunning = false;
+            clearInterval(interval);
+
+            const currentImage = remainingImages[currentIndex];
+            remainingImages.splice(currentIndex, 1);
+            displayedImages.push(currentImage);
+            displayImage(currentImage);
+
+            drawCount++;
+            if (drawCount === totalImages) {
+                alert("所有圖片已顯示完畢！");
+            }
+
+            document.getElementById('toggleButton').textContent = 'Start 开始';
+        }
+
+        // 圖片抽簽按鈕事件
+        document.getElementById('toggleButton').addEventListener('click', () => {
+            if (document.getElementById('toggleButton').textContent === 'OK 抽籤') {
+                clickCount++;
+                document.getElementById('clickCount').textContent = clickCount;
+            }
+
+            if (isRunning) {
+                pauseLottery();
+            } else {
+                startLottery();
+            }
+        });
+    </script>
+</body>
+</html>
